@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">DevTrack</string>
+    <string name="dashboard">Painel</string>
+    <string name="projects">Projetos</string>
+    <string name="goals">Metas</string>
+    <string name="settings">Configurações</string>
+    <string name="dashboard_empty">Seu resumo de produtividade aparecerá aqui.</string>
+    <string name="projects_empty">Seus projetos aparecerão aqui.</string>
+    <string name="goals_empty">Suas metas aparecerão aqui.</string>
+    <string name="settings_empty">As preferências estarão disponíveis em breve.</string>
+</resources>
