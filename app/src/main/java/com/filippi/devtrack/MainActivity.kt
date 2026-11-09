@@ -38,6 +38,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.filippi.devtrack.ui.DashboardScreen
+import com.filippi.devtrack.ui.GoalsScreen
 import com.filippi.devtrack.ui.ProjectsScreen
 import com.filippi.devtrack.ui.ProjectsViewModel
 
@@ -108,7 +109,7 @@ private fun DevTrackApp(projects: ProjectsViewModel) {
             }
             composable(Destination.Projects.route) { ProjectsScreen(state, projects) }
             composable(Destination.Goals.route) {
-                InfoScreen(R.string.goals, R.string.goals_empty)
+                GoalsScreen(state, projects, onProjects = { open(Destination.Projects) })
             }
             composable(Destination.Settings.route) {
                 InfoScreen(R.string.settings, R.string.app_details)

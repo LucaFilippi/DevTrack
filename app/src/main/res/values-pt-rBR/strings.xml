@@ -31,7 +31,7 @@
     <string name="new_project">Novo projeto</string>
     <string name="edit_project">Editar projeto</string>
     <string name="delete_project">Excluir projeto</string>
-    <string name="delete_confirm">Excluir “%1$s” permanentemente?</string>
+    <string name="delete_confirm">Excluir “%1$s” e todas as suas metas permanentemente?</string>
     <string name="delete_action">Excluir</string>
     <string name="project_actions">Ações do projeto</string>
     <string name="project_name">Nome</string>
@@ -41,5 +41,21 @@
     <string name="clear_deadline">Remover prazo</string>
     <string name="save">Salvar</string>
     <string name="cancel">Cancelar</string>
-    <string name="app_details">DevTrack 0.1.0 · Os projetos ficam salvos neste dispositivo.</string>
+    <string name="app_details">DevTrack 0.1.1 · Os projetos e as metas ficam salvos neste dispositivo.</string>
+    <string name="goals_subtitle">Acompanhe as metas e os prazos dos seus projetos</string>
+    <string name="goals_load_failed">Não foi possível carregar as metas. Tente reabrir o DevTrack.</string>
+    <string name="goals_need_project">Defina um prazo para um projeto antes de criar uma meta.</string>
+    <string name="first_goal">Ainda não há metas. Toque em + para adicionar uma meta a um projeto.</string>
+    <string name="new_goal">Nova meta</string>
+    <string name="edit_goal">Editar meta</string>
+    <string name="delete_goal">Excluir meta</string>
+    <string name="delete_goal_confirm">Excluir “%1$s” permanentemente?</string>
+    <string name="goal_actions">Ações da meta</string>
+    <string name="goal_name">Nome da meta</string>
+    <string name="goal_description">Descrição da meta</string>
+    <string name="choose_project">Escolher projeto</string>
+    <string name="goal_deadline_before">O prazo da meta deve ser anterior a %1$s.</string>
+    <string name="goal_deadline_rule">Escolha um prazo para a meta anterior ao prazo do projeto.</string>
+    <string name="project_deadline_conflict">O prazo do projeto deve ser posterior ao prazo de todas as metas vinculadas. Atualize as metas primeiro.</string>
+    <string name="goal_completed">Marcar como concluída</string>
 </resources>
