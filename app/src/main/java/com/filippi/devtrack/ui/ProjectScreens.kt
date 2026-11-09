@@ -48,15 +48,17 @@ private enum class ProjectStatus(val key: String, val label: Int) {
     }
 }
 
-private fun Long.toDate(): LocalDate = Instant.ofEpochMilli(this).atOffset(ZoneOffset.UTC).toLocalDate()
+internal fun Long.toDate(): LocalDate = Instant.ofEpochMilli(this).atOffset(ZoneOffset.UTC).toLocalDate()
+
+internal fun LocalDate.toDeadline(): Long = atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
 
 @Composable
-private fun dateLabel(value: Long): String =
+internal fun dateLabel(value: Long): String =
     value.toDate().format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
         .withLocale(LocalConfiguration.current.locales[0]))
 
 @Composable
-private fun Header(title: Int, subtitle: Int) {
+internal fun Header(title: Int, subtitle: Int) {
     Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
         Text(stringResource(R.string.brand), color = MaterialTheme.colorScheme.primary,
             style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
@@ -67,7 +69,7 @@ private fun Header(title: Int, subtitle: Int) {
 }
 
 @Composable
-private fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+internal fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     OutlinedCard(
         modifier = modifier,
         shape = RoundedCornerShape(18.dp),
@@ -160,7 +162,7 @@ fun ProjectsScreen(state: ProjectsState, model: ProjectsViewModel) {
     var adding by rememberSaveable { mutableStateOf(false) }
     var deleteId by rememberSaveable { mutableStateOf<String?>(null) }
     val busy by model.busy.collectAsStateWithLifecycle()
-    val failed by model.writeFailed.collectAsStateWithLifecycle()
+    val error by model.writeError.collectAsStateWithLifecycle()
     val projects = (state as? ProjectsState.Ready)?.projects.orEmpty()
     val visible = projects.filter {
         val matchesStatus = filter.isEmpty() || ProjectStatus.of(it).key == filter
@@ -215,7 +217,7 @@ fun ProjectsScreen(state: ProjectsState, model: ProjectsViewModel) {
     }
     val edited = projects.firstOrNull { it.id == editId }
     if (adding || edited != null) {
-        ProjectEditor(edited, busy, failed, onDismiss = { adding = false; editId = null },
+        ProjectEditor(edited, busy, error, onDismiss = { adding = false; editId = null },
             onSave = { model.save(it, adding) { adding = false; editId = null } })
     }
     val deleted = projects.firstOrNull { it.id == deleteId }
@@ -224,8 +226,7 @@ fun ProjectsScreen(state: ProjectsState, model: ProjectsViewModel) {
             onDismissRequest = { if (!busy) deleteId = null },
             title = { Text(stringResource(R.string.delete_project)) },
             text = {
-                Text(if (failed) stringResource(R.string.write_failed)
-                    else stringResource(R.string.delete_confirm, deleted.name))
+                Text(error?.let { stringResource(it) } ?: stringResource(R.string.delete_confirm, deleted.name))
             },
             confirmButton = {
                 TextButton(enabled = !busy, onClick = { model.delete(deleted) { deleteId = null } }) {
@@ -268,7 +269,7 @@ private fun ProjectCard(project: ProjectEntity, onEdit: () -> Unit, onDelete: ()
 }
 
 @Composable
-private fun ProjectEditor(project: ProjectEntity?, busy: Boolean, failed: Boolean,
+private fun ProjectEditor(project: ProjectEntity?, busy: Boolean, error: Int?,
     onDismiss: () -> Unit, onSave: (ProjectEntity) -> Unit) {
     var name by rememberSaveable(project?.id) { mutableStateOf(project?.name.orEmpty()) }
     var description by rememberSaveable(project?.id) { mutableStateOf(project?.description.orEmpty()) }
@@ -295,13 +296,13 @@ private fun ProjectEditor(project: ProjectEntity?, busy: Boolean, failed: Boolea
                 OutlinedButton(enabled = !busy, onClick = {
                     val initial = deadline?.toDate() ?: LocalDate.now()
                     DatePickerDialog(context, { _, year, month, day ->
-                        deadline = LocalDate.of(year, month + 1, day).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
+                        deadline = LocalDate.of(year, month + 1, day).toDeadline()
                     }, initial.year, initial.monthValue - 1, initial.dayOfMonth).show()
                 }) { Text(deadline?.let { dateLabel(it) } ?: stringResource(R.string.choose_deadline)) }
                 if (deadline != null) TextButton(enabled = !busy, onClick = { deadline = null }) {
                     Text(stringResource(R.string.clear_deadline))
                 }
-                if (failed) Text(stringResource(R.string.write_failed), color = MaterialTheme.colorScheme.error)
+                if (error != null) Text(stringResource(error), color = MaterialTheme.colorScheme.error)
             }
         },
         confirmButton = {
