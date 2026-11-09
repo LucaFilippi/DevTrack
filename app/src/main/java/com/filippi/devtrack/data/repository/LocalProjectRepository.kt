@@ -12,4 +12,13 @@ class LocalProjectRepository(private val dao: ProjectDao) : ProjectRepository {
         require(project.name.isNotBlank()) { "Project name must not be blank" }
         dao.insert(project)
     }
+
+    override suspend fun update(project: ProjectEntity) {
+        require(project.name.isNotBlank()) { "Project name must not be blank" }
+        check(dao.update(project) == 1)
+    }
+
+    override suspend fun delete(project: ProjectEntity) {
+        dao.delete(project)
+    }
 }

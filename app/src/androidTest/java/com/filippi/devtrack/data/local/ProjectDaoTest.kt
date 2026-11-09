@@ -33,4 +33,15 @@ class ProjectDaoTest {
         assertEquals(project, database.projectDao().getById(project.id))
         assertEquals(listOf(project), database.projectDao().observeProjects().first())
     }
+
+    @Test fun editingArchivingAndDeletingUpdatesTheProjectList() = runBlocking {
+        val dao = database.projectDao()
+        val project = ProjectEntity(name = "Original")
+        dao.insert(project)
+        val archived = project.copy(name = "Renamed", status = "archived", deadlineAt = 1_800_000_000_000)
+        assertEquals(1, dao.update(archived))
+        assertEquals(listOf(archived), dao.observeProjects().first())
+        assertEquals(1, dao.delete(archived))
+        assertEquals(emptyList<ProjectEntity>(), dao.observeProjects().first())
+    }
 }

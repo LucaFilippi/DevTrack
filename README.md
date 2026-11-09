@@ -4,7 +4,7 @@ DevTrack is an offline first Android app for organizing projects, goals, tasks, 
 
 ## Status
 
-M0 foundation: a dark Material 3 Compose shell, four navigable placeholder screens, English and Brazilian Portuguese resources, and an initial Room project data layer. Project editing and other product features are planned, not yet available.
+Version 0.1.0 includes local project management and a project dashboard. Create, edit, complete, archive, and delete projects, add optional deadlines, and find projects by name, description, or status. The dashboard summarizes saved projects and upcoming deadlines. The interface supports English and Brazilian Portuguese.
 
 ## Stack
 
@@ -16,7 +16,7 @@ Open this directory in Android Studio, install Android SDK 35 and JDK 17, sync G
 
 ## Roadmap
 
-Project CRUD, tasks, goals and milestones, dashboard statistics, notes, then local reminders. No account or internet connection is required.
+Tasks, goals and milestones, expanded dashboard statistics, notes, and local reminders are planned. No account or internet connection is required.
 
 See [architecture](docs/ARCHITECTURE.md) for the initial design.
 
