@@ -151,7 +151,8 @@ private fun DevTrackApp(projects: ProjectsViewModel, settings: @Composable () ->
     }) { padding ->
         NavHost(navController, startDestination = Destination.Dashboard.route, modifier = Modifier.padding(padding)) {
             composable(Destination.Dashboard.route) {
-                DashboardScreen(state, onProjects = { open(Destination.Projects) })
+                val goals by projects.goals.collectAsStateWithLifecycle()
+                DashboardScreen(state, goals, onProjects = { open(Destination.Projects) })
             }
             composable(Destination.Projects.route) { ProjectsScreen(state, projects) }
             composable(Destination.Goals.route) {

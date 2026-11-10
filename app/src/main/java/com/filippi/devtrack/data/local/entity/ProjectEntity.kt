@@ -12,5 +12,7 @@ data class ProjectEntity(
     val status: String = "active",
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = createdAt,
-    val deadlineAt: Long? = null
+    val deadlineAt: Long? = null,
+    val manualPriority: String? = null,
+    val classification: String? = null
 )

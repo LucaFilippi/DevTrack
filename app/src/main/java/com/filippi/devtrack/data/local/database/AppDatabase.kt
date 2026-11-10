@@ -9,12 +9,19 @@ import com.filippi.devtrack.data.local.dao.ProjectDao
 import com.filippi.devtrack.data.local.entity.GoalEntity
 import com.filippi.devtrack.data.local.entity.ProjectEntity
 
-@Database(entities = [ProjectEntity::class, GoalEntity::class], version = 2, exportSchema = false)
+@Database(entities = [ProjectEntity::class, GoalEntity::class], version = 3, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun projectDao(): ProjectDao
     abstract fun goalDao(): GoalDao
 
     companion object {
+        val Migration2To3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE projects ADD COLUMN manualPriority TEXT")
+                db.execSQL("ALTER TABLE projects ADD COLUMN classification TEXT")
+            }
+        }
+
         val Migration1To2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(

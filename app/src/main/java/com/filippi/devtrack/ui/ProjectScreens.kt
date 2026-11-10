@@ -30,12 +30,32 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.filippi.devtrack.R
 import com.filippi.devtrack.data.local.entity.ProjectEntity
+import com.filippi.devtrack.domain.model.GoalProgress
+import com.filippi.devtrack.domain.model.ProjectPriority
+import com.filippi.devtrack.domain.model.goalProgressByProject
+import com.filippi.devtrack.domain.model.priorityOn
+import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.text.NumberFormat
+
+private val ProjectPriority.label: Int
+    get() = when (this) {
+        ProjectPriority.Low -> R.string.priority_low
+        ProjectPriority.Medium -> R.string.priority_medium
+        ProjectPriority.High -> R.string.priority_high
+    }
+
+@Composable
+private fun currentDate(): State<LocalDate> = produceState(LocalDate.now()) {
+    while (true) {
+        value = LocalDate.now()
+        delay(60_000)
+    }
+}
 
 private enum class ProjectStatus(val key: String, val label: Int) {
     Todo("todo", R.string.status_todo),
@@ -81,7 +101,11 @@ internal fun Panel(modifier: Modifier = Modifier, content: @Composable ColumnSco
 }
 
 @Composable
-fun DashboardScreen(state: ProjectsState, onProjects: () -> Unit) {
+fun DashboardScreen(state: ProjectsState, goals: GoalsState, onProjects: () -> Unit) {
+    val today by currentDate()
+    val progress = remember(goals) {
+        (goals as? GoalsState.Ready)?.let { goalProgressByProject(it.goals) }
+    }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -94,12 +118,10 @@ fun DashboardScreen(state: ProjectsState, onProjects: () -> Unit) {
             is ProjectsState.Ready -> {
                 val current = state.projects.filter { ProjectStatus.of(it) != ProjectStatus.Archived }
                 val completed = current.count { ProjectStatus.of(it) == ProjectStatus.Completed }
-                val today = LocalDate.now()
                 val upcoming = current.filter {
                     ProjectStatus.of(it) != ProjectStatus.Completed &&
                         it.deadlineAt?.toDate()?.isBefore(today) == false
                 }.sortedBy { it.deadlineAt }
-                val progress = if (current.isEmpty()) 0f else completed.toFloat() / current.size
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Metric(R.string.active_projects, current.count { ProjectStatus.of(it) == ProjectStatus.Active },
@@ -115,15 +137,22 @@ fun DashboardScreen(state: ProjectsState, onProjects: () -> Unit) {
                     }
                 }
                 item {
-                    Panel(Modifier.fillMaxWidth()) {
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(stringResource(R.string.project_progress), style = MaterialTheme.typography.titleMedium)
-                            Text(NumberFormat.getPercentInstance(LocalConfiguration.current.locales[0]).format(progress),
-                                color = MaterialTheme.colorScheme.primary)
+                    Text(stringResource(R.string.project_progress), style = MaterialTheme.typography.titleLarge)
+                    when {
+                        state.projects.isEmpty() -> {
+                            Text(stringResource(R.string.dashboard_no_projects))
+                            TextButton(onClick = onProjects) { Text(stringResource(R.string.view_projects)) }
                         }
-                        LinearProgressIndicator(progress = { progress }, modifier = Modifier.fillMaxWidth())
-                        Text(stringResource(R.string.progress_detail, completed, current.size),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        goals == GoalsState.Failed -> Text(stringResource(R.string.goals_load_failed))
+                        goals == GoalsState.Loading -> CircularProgressIndicator()
+                    }
+                }
+                if (progress != null) {
+                    val sorted = state.projects.sortedWith(compareBy<ProjectEntity> {
+                        ProjectStatus.of(it) == ProjectStatus.Archived
+                    }.thenByDescending { it.priorityOn(today) }.thenBy { it.deadlineAt ?: Long.MAX_VALUE })
+                    items(sorted, key = { "progress:${it.id}" }) { project ->
+                        ProjectProgressCard(project, progress[project.id] ?: GoalProgress(), today)
                     }
                 }
                 item {
@@ -134,7 +163,7 @@ fun DashboardScreen(state: ProjectsState, onProjects: () -> Unit) {
                     }
                     if (upcoming.isEmpty()) Text(stringResource(R.string.no_deadlines))
                 }
-                items(upcoming.take(3), key = { it.id }) { project ->
+                items(upcoming.take(3), key = { "deadline:${it.id}" }) { project ->
                     Panel(Modifier.fillMaxWidth()) {
                         Text(project.name, style = MaterialTheme.typography.titleMedium)
                         project.deadlineAt?.let { Text(dateLabel(it), color = MaterialTheme.colorScheme.secondary) }
@@ -142,6 +171,43 @@ fun DashboardScreen(state: ProjectsState, onProjects: () -> Unit) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun ProjectProgressCard(project: ProjectEntity, progress: GoalProgress, today: LocalDate) {
+    Panel(Modifier.fillMaxWidth()) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(project.name, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold)
+            Text(NumberFormat.getPercentInstance(LocalConfiguration.current.locales[0]).format(progress.fraction),
+                color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+        }
+        LinearProgressIndicator(progress = { progress.fraction }, modifier = Modifier.fillMaxWidth())
+        Text(
+            if (progress.total == 0) stringResource(R.string.project_no_goals)
+            else stringResource(R.string.project_goal_progress, progress.completed, progress.total),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (ProjectStatus.of(project) == ProjectStatus.Archived) {
+            Text(stringResource(R.string.status_archived), style = MaterialTheme.typography.labelLarge)
+        }
+        ProjectMetadata(project, today)
+    }
+}
+
+@Composable
+private fun ProjectMetadata(project: ProjectEntity, today: LocalDate) {
+    val priority = project.priorityOn(today)
+    val priorityLabel = stringResource(priority.label)
+    Text(stringResource(
+        if (project.manualPriority == null) R.string.priority_auto_value else R.string.priority_manual_value,
+        priorityLabel
+    ), color = if (priority == ProjectPriority.High) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelLarge)
+    project.classification?.let {
+        Text(stringResource(R.string.classification_value, it), color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -156,6 +222,7 @@ private fun Metric(label: Int, count: Int, icon: ImageVector, modifier: Modifier
 
 @Composable
 fun ProjectsScreen(state: ProjectsState, model: ProjectsViewModel) {
+    val today by currentDate()
     var query by rememberSaveable { mutableStateOf("") }
     var filter by rememberSaveable { mutableStateOf("") }
     var editId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -167,7 +234,8 @@ fun ProjectsScreen(state: ProjectsState, model: ProjectsViewModel) {
     val visible = projects.filter {
         val matchesStatus = filter.isEmpty() || ProjectStatus.of(it).key == filter
         matchesStatus && (it.name.contains(query.trim(), ignoreCase = true) ||
-            it.description.contains(query.trim(), ignoreCase = true))
+            it.description.contains(query.trim(), ignoreCase = true) ||
+            it.classification?.contains(query.trim(), ignoreCase = true) == true)
     }
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -208,7 +276,7 @@ fun ProjectsScreen(state: ProjectsState, model: ProjectsViewModel) {
                         }
                     }
                     items(visible, key = { it.id }) { project ->
-                        ProjectCard(project, onEdit = { model.clearError(); editId = project.id },
+                        ProjectCard(project, today, onEdit = { model.clearError(); editId = project.id },
                             onDelete = { model.clearError(); deleteId = project.id })
                     }
                 }
@@ -217,7 +285,7 @@ fun ProjectsScreen(state: ProjectsState, model: ProjectsViewModel) {
     }
     val edited = projects.firstOrNull { it.id == editId }
     if (adding || edited != null) {
-        ProjectEditor(edited, busy, error, onDismiss = { adding = false; editId = null },
+        ProjectEditor(edited, today, busy, error, onDismiss = { adding = false; editId = null },
             onSave = { model.save(it, adding) { adding = false; editId = null } })
     }
     val deleted = projects.firstOrNull { it.id == deleteId }
@@ -239,7 +307,7 @@ fun ProjectsScreen(state: ProjectsState, model: ProjectsViewModel) {
 }
 
 @Composable
-private fun ProjectCard(project: ProjectEntity, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun ProjectCard(project: ProjectEntity, today: LocalDate, onEdit: () -> Unit, onDelete: () -> Unit) {
     var menu by remember { mutableStateOf(false) }
     val status = ProjectStatus.of(project)
     Panel(Modifier.fillMaxWidth()) {
@@ -259,6 +327,7 @@ private fun ProjectCard(project: ProjectEntity, onEdit: () -> Unit, onDelete: ()
             Text(stringResource(status.label), Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                 color = MaterialTheme.colorScheme.onSecondaryContainer, style = MaterialTheme.typography.labelLarge)
         }
+        ProjectMetadata(project, today)
         project.deadlineAt?.let {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.DateRange, contentDescription = null, tint = MaterialTheme.colorScheme.secondary)
@@ -269,12 +338,14 @@ private fun ProjectCard(project: ProjectEntity, onEdit: () -> Unit, onDelete: ()
 }
 
 @Composable
-private fun ProjectEditor(project: ProjectEntity?, busy: Boolean, error: Int?,
+private fun ProjectEditor(project: ProjectEntity?, today: LocalDate, busy: Boolean, error: Int?,
     onDismiss: () -> Unit, onSave: (ProjectEntity) -> Unit) {
     var name by rememberSaveable(project?.id) { mutableStateOf(project?.name.orEmpty()) }
     var description by rememberSaveable(project?.id) { mutableStateOf(project?.description.orEmpty()) }
     var status by rememberSaveable(project?.id) { mutableStateOf(project?.let { ProjectStatus.of(it).key } ?: ProjectStatus.Todo.key) }
     var deadline by rememberSaveable(project?.id) { mutableStateOf(project?.deadlineAt) }
+    var priority by rememberSaveable(project?.id) { mutableStateOf(project?.manualPriority) }
+    var classification by rememberSaveable(project?.id) { mutableStateOf(project?.classification.orEmpty()) }
     val context = LocalContext.current
     val lightPicker = MaterialTheme.colorScheme.background.luminance() > 0.5f
     AlertDialog(
@@ -301,13 +372,35 @@ private fun ProjectEditor(project: ProjectEntity?, busy: Boolean, error: Int?,
                 if (deadline != null) TextButton(enabled = !busy, onClick = { deadline = null }) {
                     Text(stringResource(R.string.clear_deadline))
                 }
+                Text(stringResource(R.string.project_priority))
+                val automatic = stringResource(ProjectPriority.effective(null, deadline, today).label)
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(priority == null, { priority = null },
+                        { Text(stringResource(R.string.priority_auto_option, automatic)) }, enabled = !busy)
+                    ProjectPriority.entries.forEach {
+                        FilterChip(priority == it.key, { priority = it.key }, { Text(stringResource(it.label)) }, enabled = !busy)
+                    }
+                }
+                if (priority == null) {
+                    Text(stringResource(R.string.priority_rules), style = MaterialTheme.typography.bodySmall)
+                }
+                OutlinedTextField(classification, { classification = it }, Modifier.fillMaxWidth(), enabled = !busy,
+                    singleLine = true, label = { Text(stringResource(R.string.project_classification)) })
+                Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(R.string.class_portfolio, R.string.class_customer, R.string.class_training, R.string.class_study)
+                        .forEach { label ->
+                            val suggestion = stringResource(label)
+                            SuggestionChip(onClick = { classification = suggestion }, label = { Text(suggestion) }, enabled = !busy)
+                        }
+                }
                 if (error != null) Text(stringResource(error), color = MaterialTheme.colorScheme.error)
             }
         },
         confirmButton = {
             TextButton(enabled = !busy && name.isNotBlank(), onClick = {
                 onSave((project ?: ProjectEntity(name = name)).copy(name = name, description = description,
-                    status = status, deadlineAt = deadline, updatedAt = System.currentTimeMillis()))
+                    status = status, deadlineAt = deadline, updatedAt = System.currentTimeMillis(),
+                    manualPriority = priority, classification = classification))
             }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = { TextButton(enabled = !busy, onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
