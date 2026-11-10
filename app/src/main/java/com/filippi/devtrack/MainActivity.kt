@@ -1,14 +1,14 @@
 package com.filippi.devtrack
 
 import android.os.Bundle
+import android.os.Build
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
@@ -16,17 +16,20 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -41,6 +44,10 @@ import com.filippi.devtrack.ui.DashboardScreen
 import com.filippi.devtrack.ui.GoalsScreen
 import com.filippi.devtrack.ui.ProjectsScreen
 import com.filippi.devtrack.ui.ProjectsViewModel
+import com.filippi.devtrack.ui.AppPreferences
+import com.filippi.devtrack.ui.LanguageChoice
+import com.filippi.devtrack.ui.SettingsScreen
+import com.filippi.devtrack.ui.ThemeChoice
 
 private val DevTrackColors = darkColorScheme(
     primary = Color(0xFF54BEFF),
@@ -56,16 +63,55 @@ private val DevTrackColors = darkColorScheme(
     outlineVariant = Color(0xFF293447)
 )
 
+private val DevTrackLightColors = lightColorScheme(
+    primary = Color(0xFF005D90),
+    secondary = Color(0xFF006B60),
+    background = Color(0xFFF4F8FC),
+    surface = Color(0xFFFFFFFF),
+    surfaceVariant = Color(0xFFE2EBF4),
+    onSurface = Color(0xFF152131),
+    onSurfaceVariant = Color(0xFF44566B),
+    secondaryContainer = Color(0xFFD1EAFF),
+    onSecondaryContainer = Color(0xFF084267),
+    outlineVariant = Color(0xFFCCD9E7)
+)
+
 class MainActivity : ComponentActivity() {
     private val projects by viewModels<ProjectsViewModel>()
 
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppPreferences(newBase).localizedContext())
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge(
-            statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
-            navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
-        )
-        setContent { MaterialTheme(colorScheme = DevTrackColors) { DevTrackApp(projects) } }
+        val preferences = AppPreferences(this)
+        setContent {
+            var theme by remember { mutableStateOf(preferences.theme) }
+            val dark = when (theme) {
+                ThemeChoice.System -> isSystemInDarkTheme()
+                ThemeChoice.Light -> false
+                ThemeChoice.Dark -> true
+            }
+            LaunchedEffect(dark) {
+                val transparent = android.graphics.Color.TRANSPARENT
+                val bars = if (dark) SystemBarStyle.dark(transparent)
+                    else SystemBarStyle.light(transparent, android.graphics.Color.BLACK)
+                enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
+            }
+            MaterialTheme(colorScheme = if (dark) DevTrackColors else DevTrackLightColors) {
+                DevTrackApp(projects, settings = {
+                    SettingsScreen(theme, preferences.language,
+                        onTheme = { preferences.theme = it; theme = it },
+                        onLanguage = {
+                            if (preferences.language != it) {
+                                preferences.language = it
+                                if (Build.VERSION.SDK_INT < 33) recreate()
+                            }
+                        })
+                })
+            }
+        }
     }
 }
 
@@ -77,7 +123,7 @@ private enum class Destination(val route: String, val label: Int, val icon: Imag
 }
 
 @Composable
-private fun DevTrackApp(projects: ProjectsViewModel) {
+private fun DevTrackApp(projects: ProjectsViewModel, settings: @Composable () -> Unit) {
     val navController = rememberNavController()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val state by projects.state.collectAsStateWithLifecycle()
@@ -112,22 +158,8 @@ private fun DevTrackApp(projects: ProjectsViewModel) {
                 GoalsScreen(state, projects, onProjects = { open(Destination.Projects) })
             }
             composable(Destination.Settings.route) {
-                InfoScreen(R.string.settings, R.string.app_details)
+                settings()
             }
-        }
-    }
-}
-
-@Composable
-private fun InfoScreen(title: Int, message: Int) {
-    Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(stringResource(title), style = MaterialTheme.typography.headlineMedium)
-            Text(stringResource(message), style = MaterialTheme.typography.bodyLarge)
         }
     }
 }

@@ -1,6 +1,5 @@
 package com.filippi.devtrack.ui
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,6 +15,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -149,6 +149,7 @@ private fun GoalEditor(
     val selectedDeadline = deadline
     val validDeadline = selectedDeadline != null && projectDeadline != null && selectedDeadline < projectDeadline
     val context = LocalContext.current
+    val lightPicker = MaterialTheme.colorScheme.background.luminance() > 0.5f
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
         title = { Text(stringResource(if (goal == null) R.string.new_goal else R.string.edit_goal)) },
@@ -177,9 +178,7 @@ private fun GoalEditor(
                     OutlinedButton(enabled = !busy, onClick = {
                         val lastAllowed = projectDeadline.toDate().minusDays(1)
                         val initial = minOf(deadline?.toDate() ?: LocalDate.now(), lastAllowed)
-                        DatePickerDialog(context, { _, year, month, day ->
-                            deadline = LocalDate.of(year, month + 1, day).toDeadline()
-                        }, initial.year, initial.monthValue - 1, initial.dayOfMonth).show()
+                        showDeadlinePicker(context, initial, lightPicker) { deadline = it }
                     }) {
                         Text(selectedDeadline?.let { dateLabel(it) } ?: stringResource(R.string.choose_deadline))
                     }

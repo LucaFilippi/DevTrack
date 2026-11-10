@@ -7,7 +7,6 @@
     <string name="dashboard_empty">Your productivity overview will appear here.</string>
     <string name="projects_empty">Your projects will appear here.</string>
     <string name="goals_empty">Your goals will appear here.</string>
-    <string name="settings_empty">Preferences are coming soon.</string>
     <string name="brand">&lt;/&gt; DevTrack</string>
     <string name="dashboard_subtitle">Your project overview</string>
     <string name="projects_subtitle">Manage your projects and track their progress</string>
@@ -41,7 +40,17 @@
     <string name="clear_deadline">Clear deadline</string>
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
-    <string name="app_details">DevTrack 0.1.1 · Projects and goals are stored on this device.</string>
+    <string name="settings_subtitle">Personalize DevTrack on this device</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_language">App language</string>
+    <string name="settings_about">About</string>
+    <string name="follow_system">Follow system</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+    <string name="language_english">English</string>
+    <string name="language_portuguese">Português (Brasil)</string>
+    <string name="app_version">Version %1$s</string>
+    <string name="app_storage">Projects and goals are stored on this device.</string>
     <string name="goals_subtitle">Track goals and deadlines across your projects</string>
     <string name="goals_load_failed">Goals could not be loaded. Try reopening DevTrack.</string>
     <string name="goals_need_project">Add a deadline to a project before creating a goal.</string>
