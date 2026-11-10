@@ -42,7 +42,7 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.text.NumberFormat
 
-private val ProjectPriority.label: Int
+internal val ProjectPriority.label: Int
     get() = when (this) {
         ProjectPriority.Low -> R.string.priority_low
         ProjectPriority.Medium -> R.string.priority_medium
