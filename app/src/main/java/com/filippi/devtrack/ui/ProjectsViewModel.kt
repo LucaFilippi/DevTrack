@@ -35,7 +35,7 @@ sealed interface GoalsState {
 
 class ProjectsViewModel(application: Application) : AndroidViewModel(application) {
     private val database = Room.databaseBuilder(application, AppDatabase::class.java, "devtrack.db")
-        .addMigrations(AppDatabase.Migration1To2)
+        .addMigrations(AppDatabase.Migration1To2, AppDatabase.Migration2To3)
         .build()
     private val repository = LocalProjectRepository(database.projectDao())
     private val goalRepository = GoalRepository(database)
@@ -56,7 +56,11 @@ class ProjectsViewModel(application: Application) : AndroidViewModel(application
     fun clearError() { _writeError.value = null }
 
     fun save(project: ProjectEntity, isNew: Boolean, onSuccess: () -> Unit) = write(onSuccess) {
-        val clean = project.copy(name = project.name.trim(), description = project.description.trim())
+        val clean = project.copy(
+            name = project.name.trim(),
+            description = project.description.trim(),
+            classification = project.classification?.trim()?.takeIf { it.isNotEmpty() }
+        )
         if (isNew) repository.add(clean) else goalRepository.updateProject(clean, repository)
     }
 

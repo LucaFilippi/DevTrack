@@ -81,14 +81,19 @@ class GoalRepositoryTest {
                 old.version = 1
             }
             val database = Room.databaseBuilder(context, AppDatabase::class.java, name)
-                .addMigrations(AppDatabase.Migration1To2).build()
+                .addMigrations(AppDatabase.Migration1To2, AppDatabase.Migration2To3).build()
             try {
                 val project = database.projectDao().getById("existing")
                 assertEquals("Existing project", project?.name)
+                assertEquals(null, project?.manualPriority)
+                assertEquals(null, project?.classification)
                 val goals = GoalRepository(database)
                 goals.save(GoalEntity(projectId = "existing", name = "Goal",
                     description = "Description", deadlineAt = 1_000), isNew = true)
                 assertEquals("existing", goals.all.first().single().projectId)
+                val updated = requireNotNull(project).copy(manualPriority = "high", classification = "Portfolio")
+                goals.updateProject(updated, LocalProjectRepository(database.projectDao()))
+                assertEquals(updated, database.projectDao().getById("existing"))
             } finally {
                 database.close()
             }
