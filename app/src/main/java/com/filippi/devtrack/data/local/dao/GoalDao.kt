@@ -13,6 +13,12 @@ interface GoalDao {
     @Query("SELECT * FROM goals ORDER BY completed, deadlineAt, name, id")
     fun observeGoals(): Flow<List<GoalEntity>>
 
+    @Query("SELECT * FROM goals ORDER BY id")
+    suspend fun getAll(): List<GoalEntity>
+
+    @Query("DELETE FROM goals")
+    suspend fun deleteAll()
+
     @Query("SELECT MAX(deadlineAt) FROM goals WHERE projectId = :projectId")
     suspend fun latestDeadline(projectId: String): Long?
 

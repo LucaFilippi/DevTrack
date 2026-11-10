@@ -13,11 +13,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,14 +27,11 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.filippi.devtrack.BuildConfig
 import com.filippi.devtrack.R
-import com.filippi.devtrack.domain.model.ProjectPriority
 
-private enum class SettingsDialog { Theme, Language, WeekStart, Priority, Storage, About }
+private enum class SettingsDialog { Theme, Language, Storage, About }
 
 @Composable
 internal fun SettingsScreen(
@@ -45,14 +40,18 @@ internal fun SettingsScreen(
     preferences: AppPreferences,
     onBack: () -> Unit,
     onTheme: (ThemeChoice) -> Unit,
-    onLanguage: (LanguageChoice) -> Unit
+    onLanguage: (LanguageChoice) -> Unit,
+    backupState: BackupState,
+    onExportBackup: () -> Unit,
+    onImportBackup: () -> Unit,
+    onConfirmRestore: () -> Unit,
+    onCancelRestore: () -> Unit,
+    onDismissBackupMessage: () -> Unit
 ) {
-    var notifications by remember { mutableStateOf(preferences.notificationsEnabled) }
-    var weekStart by remember { mutableStateOf(preferences.weekStart) }
-    var priority by remember { mutableStateOf(preferences.defaultTaskPriority) }
     var dialog by rememberSaveable { mutableStateOf<SettingsDialog?>(null) }
     var privacy by rememberSaveable { mutableStateOf(false) }
     val uriHandler = LocalUriHandler.current
+    val backupBusy = backupState is BackupState.Working
 
     if (privacy) {
         BackHandler { privacy = false }
@@ -77,25 +76,19 @@ internal fun SettingsScreen(
         }
         item {
             SectionTitle(R.string.settings_productivity, divider = true)
-            val notificationsLabel = stringResource(R.string.settings_notifications)
-            SettingLine(Icons.Default.Notifications, R.string.settings_notifications,
-                stringResource(R.string.settings_notifications_preview)) {
-                Switch(
-                    checked = notifications,
-                    onCheckedChange = { preferences.notificationsEnabled = it; notifications = it },
-                    modifier = Modifier.padding(start = 8.dp)
-                        .semantics { contentDescription = notificationsLabel }
-                )
-            }
-            SettingsRow(Icons.Default.DateRange, R.string.settings_week_start, stringResource(weekStart.label)) {
-                dialog = SettingsDialog.WeekStart
-            }
-            SettingsRow(Icons.AutoMirrored.Filled.List, R.string.settings_default_priority, stringResource(priority.label)) {
-                dialog = SettingsDialog.Priority
-            }
+            Text(stringResource(R.string.settings_productivity_unavailable),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.padding(bottom = 4.dp))
         }
         item {
             SectionTitle(R.string.settings_data, divider = true)
+            SettingsRow(Icons.Default.Build, R.string.settings_backup_export,
+                stringResource(R.string.settings_backup_export_description), enabled = !backupBusy,
+                onClick = onExportBackup)
+            SettingsRow(Icons.Default.Build, R.string.settings_backup_import,
+                stringResource(R.string.settings_backup_import_description), enabled = !backupBusy,
+                onClick = onImportBackup)
             SettingsRow(Icons.Default.Lock, R.string.settings_local_storage, stringResource(R.string.settings_local_only)) {
                 dialog = SettingsDialog.Storage
             }
@@ -108,7 +101,7 @@ internal fun SettingsScreen(
             SettingsRow(Icons.Default.Build, R.string.settings_source, stringResource(R.string.settings_open_source)) {
                 uriHandler.openUri("https://github.com/LucaFilippi/DevTrack")
             }
-            SettingsRow(Icons.Default.Lock, R.string.settings_privacy, stringResource(R.string.settings_local_only)) {
+            SettingsRow(Icons.Default.Lock, R.string.settings_privacy, stringResource(R.string.settings_privacy_summary)) {
                 privacy = true
             }
         }
@@ -124,16 +117,6 @@ internal fun SettingsScreen(
             dismiss()
             onLanguage(it)
         }
-        SettingsDialog.WeekStart -> ChoiceDialog(R.string.settings_week_start, WeekStart.entries, weekStart, { it.label }, dismiss) {
-            preferences.weekStart = it
-            weekStart = it
-            dismiss()
-        }
-        SettingsDialog.Priority -> ChoiceDialog(R.string.settings_default_priority, ProjectPriority.entries, priority, { it.label }, dismiss) {
-            preferences.defaultTaskPriority = it
-            priority = it
-            dismiss()
-        }
         SettingsDialog.Storage -> InfoDialog(R.string.settings_local_storage, dismiss) {
             Text(stringResource(R.string.app_storage))
         }
@@ -147,6 +130,27 @@ internal fun SettingsScreen(
             }
         }
         null -> Unit
+    }
+
+    when (val state = backupState) {
+        BackupState.Idle, BackupState.Working -> Unit
+        is BackupState.RestoreReady -> AlertDialog(
+            onDismissRequest = onCancelRestore,
+            title = { Text(stringResource(R.string.backup_restore_title)) },
+            text = {
+                Text(stringResource(R.string.backup_restore_message,
+                    state.document.projects.size, state.document.goals.size))
+            },
+            confirmButton = {
+                TextButton(onClick = onConfirmRestore) { Text(stringResource(R.string.backup_restore_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = onCancelRestore) { Text(stringResource(R.string.cancel)) }
+            }
+        )
+        is BackupState.Message -> InfoDialog(state.text, onDismissBackupMessage) {
+            Text(stringResource(state.text))
+        }
     }
 }
 
@@ -168,8 +172,8 @@ private fun SectionTitle(title: Int, divider: Boolean = false) {
 }
 
 @Composable
-private fun SettingsRow(icon: ImageVector, title: Int, subtitle: String, onClick: () -> Unit) {
-    SettingLine(icon, title, subtitle, Modifier.clickable(onClick = onClick, role = Role.Button)) {
+private fun SettingsRow(icon: ImageVector, title: Int, subtitle: String, enabled: Boolean = true, onClick: () -> Unit) {
+    SettingLine(icon, title, subtitle, Modifier.clickable(enabled = enabled, onClick = onClick, role = Role.Button)) {
         Icon(Icons.Default.KeyboardArrowRight, contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }

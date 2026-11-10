@@ -13,8 +13,8 @@ android {
         applicationId = "com.filippi.devtrack"
         minSdk = 26
         targetSdk = 35
-        versionCode = 5
-        versionName = "0.1.3"
+        versionCode = 6
+        versionName = "0.1.4"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildFeatures {
@@ -48,4 +48,12 @@ dependencies {
     androidTestImplementation(libs.room.testing)
     androidTestImplementation(platform(libs.compose.bom))
     androidTestImplementation(libs.compose.ui.test.junit4)
+}
+
+kapt {
+    arguments {
+        arg("room.schemaLocation", "$projectDir/schemas")
+        arg("room.incremental", "true")
+        arg("room.expandProjection", "true")
+    }
 }
