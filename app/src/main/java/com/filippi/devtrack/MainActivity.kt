@@ -100,8 +100,8 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
             }
             MaterialTheme(colorScheme = if (dark) DevTrackColors else DevTrackLightColors) {
-                DevTrackApp(projects, settings = {
-                    SettingsScreen(theme, preferences.language,
+                DevTrackApp(projects, settings = { onBack ->
+                    SettingsScreen(theme, preferences.language, preferences, onBack,
                         onTheme = { preferences.theme = it; theme = it },
                         onLanguage = {
                             if (preferences.language != it) {
@@ -123,7 +123,7 @@ private enum class Destination(val route: String, val label: Int, val icon: Imag
 }
 
 @Composable
-private fun DevTrackApp(projects: ProjectsViewModel, settings: @Composable () -> Unit) {
+private fun DevTrackApp(projects: ProjectsViewModel, settings: @Composable (() -> Unit) -> Unit) {
     val navController = rememberNavController()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val state by projects.state.collectAsStateWithLifecycle()
@@ -159,7 +159,7 @@ private fun DevTrackApp(projects: ProjectsViewModel, settings: @Composable () ->
                 GoalsScreen(state, projects, onProjects = { open(Destination.Projects) })
             }
             composable(Destination.Settings.route) {
-                settings()
+                settings { navController.popBackStack() }
             }
         }
     }
