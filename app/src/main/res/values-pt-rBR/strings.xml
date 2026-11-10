@@ -7,7 +7,6 @@
     <string name="dashboard_empty">Seu resumo de produtividade aparecerá aqui.</string>
     <string name="projects_empty">Seus projetos aparecerão aqui.</string>
     <string name="goals_empty">Suas metas aparecerão aqui.</string>
-    <string name="settings_empty">As preferências estarão disponíveis em breve.</string>
     <string name="brand">&lt;/&gt; DevTrack</string>
     <string name="dashboard_subtitle">Visão geral dos seus projetos</string>
     <string name="projects_subtitle">Gerencie seus projetos e acompanhe o progresso</string>
@@ -41,7 +40,17 @@
     <string name="clear_deadline">Remover prazo</string>
     <string name="save">Salvar</string>
     <string name="cancel">Cancelar</string>
-    <string name="app_details">DevTrack 0.1.1 · Os projetos e as metas ficam salvos neste dispositivo.</string>
+    <string name="settings_subtitle">Personalize o DevTrack neste dispositivo</string>
+    <string name="settings_appearance">Aparência</string>
+    <string name="settings_language">Idioma do aplicativo</string>
+    <string name="settings_about">Sobre</string>
+    <string name="follow_system">Seguir o sistema</string>
+    <string name="theme_light">Claro</string>
+    <string name="theme_dark">Escuro</string>
+    <string name="language_english">English</string>
+    <string name="language_portuguese">Português (Brasil)</string>
+    <string name="app_version">Versão %1$s</string>
+    <string name="app_storage">Os projetos e as metas ficam salvos neste dispositivo.</string>
     <string name="goals_subtitle">Acompanhe as metas e os prazos dos seus projetos</string>
     <string name="goals_load_failed">Não foi possível carregar as metas. Tente reabrir o DevTrack.</string>
     <string name="goals_need_project">Defina um prazo para um projeto antes de criar uma meta.</string>

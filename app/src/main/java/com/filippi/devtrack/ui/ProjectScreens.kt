@@ -1,6 +1,5 @@
 package com.filippi.devtrack.ui
 
-import android.app.DatePickerDialog
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
@@ -24,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -276,6 +276,7 @@ private fun ProjectEditor(project: ProjectEntity?, busy: Boolean, error: Int?,
     var status by rememberSaveable(project?.id) { mutableStateOf(project?.let { ProjectStatus.of(it).key } ?: ProjectStatus.Todo.key) }
     var deadline by rememberSaveable(project?.id) { mutableStateOf(project?.deadlineAt) }
     val context = LocalContext.current
+    val lightPicker = MaterialTheme.colorScheme.background.luminance() > 0.5f
     AlertDialog(
         onDismissRequest = { if (!busy) onDismiss() },
         title = { Text(stringResource(if (project == null) R.string.new_project else R.string.edit_project)) },
@@ -295,9 +296,7 @@ private fun ProjectEditor(project: ProjectEntity?, busy: Boolean, error: Int?,
                 }
                 OutlinedButton(enabled = !busy, onClick = {
                     val initial = deadline?.toDate() ?: LocalDate.now()
-                    DatePickerDialog(context, { _, year, month, day ->
-                        deadline = LocalDate.of(year, month + 1, day).toDeadline()
-                    }, initial.year, initial.monthValue - 1, initial.dayOfMonth).show()
+                    showDeadlinePicker(context, initial, lightPicker) { deadline = it }
                 }) { Text(deadline?.let { dateLabel(it) } ?: stringResource(R.string.choose_deadline)) }
                 if (deadline != null) TextButton(enabled = !busy, onClick = { deadline = null }) {
                     Text(stringResource(R.string.clear_deadline))
