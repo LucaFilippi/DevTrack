@@ -9,7 +9,7 @@ import com.filippi.devtrack.data.local.dao.ProjectDao
 import com.filippi.devtrack.data.local.entity.GoalEntity
 import com.filippi.devtrack.data.local.entity.ProjectEntity
 
-@Database(entities = [ProjectEntity::class, GoalEntity::class], version = 3, exportSchema = false)
+@Database(entities = [ProjectEntity::class, GoalEntity::class], version = 3, exportSchema = true)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun projectDao(): ProjectDao
     abstract fun goalDao(): GoalDao

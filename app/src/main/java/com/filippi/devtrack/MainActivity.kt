@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.os.Build
 import android.content.Context
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
@@ -45,9 +47,12 @@ import com.filippi.devtrack.ui.GoalsScreen
 import com.filippi.devtrack.ui.ProjectsScreen
 import com.filippi.devtrack.ui.ProjectsViewModel
 import com.filippi.devtrack.ui.AppPreferences
+import com.filippi.devtrack.ui.BackupState
 import com.filippi.devtrack.ui.LanguageChoice
 import com.filippi.devtrack.ui.SettingsScreen
 import com.filippi.devtrack.ui.ThemeChoice
+import java.time.LocalDate
+import java.time.ZoneOffset
 
 private val DevTrackColors = darkColorScheme(
     primary = Color(0xFF54BEFF),
@@ -100,7 +105,7 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(statusBarStyle = bars, navigationBarStyle = bars)
             }
             MaterialTheme(colorScheme = if (dark) DevTrackColors else DevTrackLightColors) {
-                DevTrackApp(projects, settings = { onBack ->
+                DevTrackApp(projects, settings = { onBack, backupState, onExport, onImport, onConfirmRestore, onCancelRestore, onDismissBackupMessage ->
                     SettingsScreen(theme, preferences.language, preferences, onBack,
                         onTheme = { preferences.theme = it; theme = it },
                         onLanguage = {
@@ -108,7 +113,9 @@ class MainActivity : ComponentActivity() {
                                 preferences.language = it
                                 if (Build.VERSION.SDK_INT < 33) recreate()
                             }
-                        })
+                        }, backupState = backupState, onExportBackup = onExport, onImportBackup = onImport,
+                        onConfirmRestore = onConfirmRestore, onCancelRestore = onCancelRestore,
+                        onDismissBackupMessage = onDismissBackupMessage)
                 })
             }
         }
@@ -123,10 +130,22 @@ private enum class Destination(val route: String, val label: Int, val icon: Imag
 }
 
 @Composable
-private fun DevTrackApp(projects: ProjectsViewModel, settings: @Composable (() -> Unit) -> Unit) {
+private fun DevTrackApp(
+    projects: ProjectsViewModel,
+    settings: @Composable (
+        () -> Unit, BackupState, () -> Unit, () -> Unit, () -> Unit, () -> Unit, () -> Unit
+    ) -> Unit
+) {
     val navController = rememberNavController()
     val currentRoute = navController.currentBackStackEntryAsState().value?.destination?.route
     val state by projects.state.collectAsStateWithLifecycle()
+    val backupState by projects.backupState.collectAsStateWithLifecycle()
+    val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) {
+        it?.let(projects::exportBackup)
+    }
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) {
+        it?.let(projects::prepareImport)
+    }
     fun open(destination: Destination) {
         navController.navigate(destination.route) {
             popUpTo(navController.graph.findStartDestination().id) { saveState = true }
@@ -159,7 +178,12 @@ private fun DevTrackApp(projects: ProjectsViewModel, settings: @Composable (() -
                 GoalsScreen(state, projects, onProjects = { open(Destination.Projects) })
             }
             composable(Destination.Settings.route) {
-                settings { navController.popBackStack() }
+                settings(
+                    { navController.popBackStack() }, backupState,
+                    { exportLauncher.launch("devtrack-backup-${LocalDate.now(ZoneOffset.UTC)}.json") },
+                    { importLauncher.launch(arrayOf("application/json", "text/json", "text/plain")) },
+                    projects::confirmRestore, projects::cancelRestore, projects::clearBackupState
+                )
             }
         }
     }

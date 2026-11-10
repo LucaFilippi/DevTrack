@@ -16,6 +16,12 @@ interface ProjectDao {
     @Query("SELECT * FROM projects WHERE id = :id LIMIT 1")
     suspend fun getById(id: String): ProjectEntity?
 
+    @Query("SELECT * FROM projects ORDER BY id")
+    suspend fun getAll(): List<ProjectEntity>
+
+    @Query("DELETE FROM projects")
+    suspend fun deleteAll()
+
     @Insert
     suspend fun insert(project: ProjectEntity)
 
