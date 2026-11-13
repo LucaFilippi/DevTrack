@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0] — Deadline Reminders
+
+### Added
+
+- Optional local notifications for active projects and incomplete goals 7 days, 5 days, and 1 day before their deadlines.
+- Android 13 notification permission request and a reminder toggle in Settings.
+- Daily alarm scheduling with recovery after reboot, time changes, and time zone changes.
+
+### Changed
+
+- Updated the app version and documentation for 0.2.0.
+
 ## [0.1.4] — Backup & Reliability Update
 
 ### Added

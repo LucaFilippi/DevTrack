@@ -85,7 +85,15 @@
     <string name="goal_completed">Mark as completed</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_productivity">Productivity</string>
-    <string name="settings_productivity_unavailable">Reminders, week start, and default task priority will be added in a future release.</string>
+    <string name="settings_productivity_unavailable">Week start and default task priority will be added in a future release.</string>
+    <string name="settings_notifications">Deadline reminders</string>
+    <string name="settings_notifications_description">Notify 7 days, 5 days, and 1 day before project and goal deadlines</string>
+    <string name="reminder_channel">Deadline reminders</string>
+    <string name="reminder_project_title">Project deadline approaching</string>
+    <string name="reminder_goal_title">Goal deadline approaching</string>
+    <string name="reminder_week">%1$s is due in one week.</string>
+    <string name="reminder_five_days">%1$s is due in 5 days.</string>
+    <string name="reminder_tomorrow">%1$s is due tomorrow.</string>
     <string name="week_monday">Monday</string>
     <string name="week_sunday">Sunday</string>
     <string name="week_saturday">Saturday</string>

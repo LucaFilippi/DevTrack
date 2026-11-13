@@ -1,6 +1,11 @@
 package com.filippi.devtrack.ui
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -24,12 +29,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.filippi.devtrack.BuildConfig
 import com.filippi.devtrack.R
+import androidx.core.content.ContextCompat
 
 private enum class SettingsDialog { Theme, Language, Storage, About }
 
@@ -50,6 +57,15 @@ internal fun SettingsScreen(
 ) {
     var dialog by rememberSaveable { mutableStateOf<SettingsDialog?>(null) }
     var privacy by rememberSaveable { mutableStateOf(false) }
+    var notificationsEnabled by remember { mutableStateOf(preferences.notificationsEnabled) }
+    val context = LocalContext.current
+    val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            preferences.notificationsEnabled = true
+            notificationsEnabled = true
+            DeadlineReminders.start(context)
+        }
+    }
     val uriHandler = LocalUriHandler.current
     val backupBusy = backupState is BackupState.Working
 
@@ -76,6 +92,23 @@ internal fun SettingsScreen(
         }
         item {
             SectionTitle(R.string.settings_productivity, divider = true)
+            SettingLine(Icons.Default.Info, R.string.settings_notifications,
+                stringResource(R.string.settings_notifications_description)) {
+                Switch(checked = notificationsEnabled, onCheckedChange = { enabled ->
+                    if (!enabled) {
+                        preferences.notificationsEnabled = false
+                        notificationsEnabled = false
+                        DeadlineReminders.stop(context)
+                    } else if (Build.VERSION.SDK_INT >= 33 && ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                        permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    } else {
+                        preferences.notificationsEnabled = true
+                        notificationsEnabled = true
+                        DeadlineReminders.start(context)
+                    }
+                })
+            }
             Text(stringResource(R.string.settings_productivity_unavailable),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodySmall,

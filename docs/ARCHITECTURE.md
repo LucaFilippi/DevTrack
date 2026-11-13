@@ -25,6 +25,6 @@ Restore is explicitly replace-only in v0.1.4. The selected document is fully par
 
 ## UI and settings
 
-Compose screens provide Dashboard, Projects, Goals, and Settings with Material 3 and the existing bottom navigation. Appearance and language preferences are persisted through `AppPreferences`. Notifications, week start, and default task priority remain stored for compatibility but are labeled as planned because they do not yet change application behavior. Backup actions are available in Settings and surface validation, success, and failure states without exposing raw exceptions.
+Compose screens provide Dashboard, Projects, Goals, and Settings with Material 3 and the existing bottom navigation. Appearance, language, and the notification opt-in are persisted through `AppPreferences`. `DeadlineReminders` schedules a daily local alarm, checks deadlines against the device's calendar date, and records delivered reminders to avoid duplicates. A receiver resumes the schedule after reboot or clock changes. Week start and default task priority remain planned. Backup actions are available in Settings and surface validation, success, and failure states without exposing raw exceptions.
 
 The app has no network permission or synchronization layer. Exported JSON remains under the user's control and is never transmitted by DevTrack.
