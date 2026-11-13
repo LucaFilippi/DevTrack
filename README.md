@@ -18,7 +18,7 @@
 
 DevTrack is a local-first project and goal tracker for developers and makers. Create projects, break them into measurable goals, assign deadlines, and use the dashboard to see progress at a glance—without an account, server, or network connection.
 
-The current release is **0.1.4**. See the [v0.1.4 release](https://github.com/LucaFilippi/DevTrack/releases/tag/v0.1.4) for release notes and artifacts.
+The current release is **0.2.0**. See the [v0.2.0 release](https://github.com/LucaFilippi/DevTrack/releases/tag/v0.2.0) for release notes and artifacts.
 
 ## Highlights
 
@@ -26,15 +26,20 @@ The current release is **0.1.4**. See the [v0.1.4 release](https://github.com/Lu
 - **Project and goal tracking** — Create, search, filter, edit, archive, and delete projects; link goals and mark them complete.
 - **Priority and classification** — Use automatic or manual project priority and group work by classification.
 - **Local JSON backups** — Export projects and goals through Android's document picker and restore them with validation and an explicit replace-data confirmation.
+- **Deadline reminders** — Opt in to local notifications 7 days, 5 days, and 1 day before active project and incomplete goal deadlines.
 - **Offline-first storage** — Projects and goals are stored locally with Room/SQLite; no account or internet connection is required.
-- **Reliable settings** — Appearance and language remain active and persisted; unfinished productivity controls are clearly labeled as planned.
+- **Reliable settings** — Appearance, language, and deadline reminders are active and persisted; remaining productivity controls are labeled as planned.
 - **Privacy by design** — Backup files stay under the user's control and are never uploaded by DevTrack.
 
 ### Backup and restore
 
 Backups use a documented JSON format (`formatVersion: 1`) containing projects, goals, IDs, timestamps, statuses, priorities, classifications, deadlines, and completion states. Export and import use Android's Storage Access Framework, so no storage permission is required.
 
-Restore is intentionally **replace-only** in v0.1.4: the selected file is parsed and validated before a Room transaction clears and recreates projects and goals. Invalid or unsupported files leave existing data unchanged. App settings are not included in the backup.
+Restore is intentionally **replace-only**: the selected file is parsed and validated before a Room transaction clears and recreates projects and goals. Invalid or unsupported files leave existing data unchanged. App settings are not included in the backup.
+
+### Deadline reminders
+
+Turn on **Deadline reminders** in Settings → Productivity. On Android 13 and newer, allow DevTrack to post notifications when prompted. Reminders are scheduled locally for 9:00 a.m. device time and checked again when the app opens or data changes. Android may deliver background alarms later to save battery. Completed or archived projects and completed goals receive no reminders. Notifications use the selected calendar deadline, so travel between time zones does not shift the due date.
 
 ## Screenshots
 
@@ -92,11 +97,11 @@ On Windows, use `gradlew.bat`. Instrumented tests require a connected device or 
 
 ## Architecture
 
-The single `app` module is organized by responsibility. Compose owns presentation, the ViewModel coordinates state and user actions, repositories define persistence boundaries, and Room owns local database integrity. Backup serialization and validation live in a dedicated data-layer service rather than in Compose UI. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
+The single `app` module is organized by responsibility. Compose owns presentation, the ViewModel coordinates state and user actions, repositories define persistence boundaries, and Room owns local database integrity. Backup serialization and validation live in a dedicated data-layer service. Local deadline reminders use Android notifications and alarms. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 
 ## Roadmap
 
-Tasks, milestones, expanded dashboard statistics, notes, and local reminders are planned. Cloud synchronization, authentication, and task management are intentionally outside the 0.1.4 scope.
+Tasks, milestones, expanded dashboard statistics, notes, week start, and default task priority are planned. Cloud synchronization and authentication are outside the 0.2.0 scope.
 
 ## License
 

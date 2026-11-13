@@ -85,7 +85,15 @@
     <string name="goal_completed">Marcar como concluída</string>
     <string name="settings_theme">Tema</string>
     <string name="settings_productivity">Produtividade</string>
-    <string name="settings_productivity_unavailable">Lembretes, início da semana e prioridade padrão serão adicionados em uma versão futura.</string>
+    <string name="settings_productivity_unavailable">O início da semana e a prioridade padrão serão adicionados em uma versão futura.</string>
+    <string name="settings_notifications">Lembretes de prazo</string>
+    <string name="settings_notifications_description">Notificar 7 dias, 5 dias e 1 dia antes dos prazos de projetos e metas</string>
+    <string name="reminder_channel">Lembretes de prazo</string>
+    <string name="reminder_project_title">Prazo de projeto próximo</string>
+    <string name="reminder_goal_title">Prazo de meta próximo</string>
+    <string name="reminder_week">%1$s vence em uma semana.</string>
+    <string name="reminder_five_days">%1$s vence em 5 dias.</string>
+    <string name="reminder_tomorrow">%1$s vence amanhã.</string>
     <string name="week_monday">Segunda-feira</string>
     <string name="week_sunday">Domingo</string>
     <string name="week_saturday">Sábado</string>

@@ -87,6 +87,7 @@ class ProjectsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             try {
                 backupService.restore(ready.document)
+                DeadlineReminders.start(getApplication())
                 _backupState.value = BackupState.Message(R.string.backup_import_success)
             } catch (error: CancellationException) {
                 throw error
@@ -126,6 +127,7 @@ class ProjectsViewModel(application: Application) : AndroidViewModel(application
         viewModelScope.launch {
             try {
                 operation()
+                DeadlineReminders.start(getApplication())
                 onSuccess()
             } catch (error: CancellationException) {
                 throw error

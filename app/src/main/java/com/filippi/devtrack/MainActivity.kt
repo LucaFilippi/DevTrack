@@ -51,6 +51,7 @@ import com.filippi.devtrack.ui.BackupState
 import com.filippi.devtrack.ui.LanguageChoice
 import com.filippi.devtrack.ui.SettingsScreen
 import com.filippi.devtrack.ui.ThemeChoice
+import com.filippi.devtrack.ui.DeadlineReminders
 import java.time.LocalDate
 import java.time.ZoneOffset
 
@@ -90,6 +91,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        DeadlineReminders.start(this)
         val preferences = AppPreferences(this)
         setContent {
             var theme by remember { mutableStateOf(preferences.theme) }
